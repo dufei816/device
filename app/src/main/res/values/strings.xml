@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">device</string>
+    <string name="camera_use">摄像机正在使用</string>
+</resources>
