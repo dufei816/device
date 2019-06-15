@@ -19,20 +19,28 @@
 
     </RelativeLayout>
 
-    <ImageView
-        android:id="@+id/image_view"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@mipmap/main" />
+        android:layout_height="match_parent">
 
-    <TextView
-        android:layout_marginTop="20dp"
-        android:id="@+id/tv_number"
-        android:layout_marginLeft="60dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@android:color/black"
-        android:textSize="90sp" />
+        <ImageView
+            android:id="@+id/image_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@mipmap/main" />
+
+        <TextView
+            android:layout_marginTop="20dp"
+            android:id="@+id/tv_number"
+            android:layout_marginLeft="60dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/black"
+            android:textSize="90sp" />
+
+    </RelativeLayout>
+
+
 
 
 </RelativeLayout>

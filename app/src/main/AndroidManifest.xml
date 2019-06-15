@@ -28,11 +28,12 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".activity.ErrorActivity" />
+
         <receiver
             android:name=".mode.StartReceiver"
             android:enabled="true"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>

@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 import com.koushikdutta.async.http.AsyncHttpClient;
 import com.koushikdutta.async.http.WebSocket;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
 
@@ -18,70 +19,21 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
 
 
-public class WebSocketMode {
+public class DeviceSocketMode {
 
-    private static final String TAG = "WebSocketMode";
+    private static final String TAG = "DeviceSocketMode";
     public static final Object waitObject = new Object();
-    private static WebSocketMode webSocketMode;
-    private final Disposable heartbeatDis;
+    private static DeviceSocketMode deviceWebSocket;
+    private Disposable dis;
     private SendThread sendThread;
     private WebSocket webSocket;
     private LinkedList<String> messageList = new LinkedList<>();
+
+    @SuppressLint("UseSparseArrays")
+    private HashMap<Integer, DeviceListener> messagesListener = new HashMap<>();
+
     private Gson gson = new Gson();
-    private ServerListener listener;
-
-
-    public void setListener(ServerListener listener) {
-        this.listener = listener;
-    }
-
-    private WebSocket.StringCallback stringCallback = msg -> {
-        if (listener == null) return;
-        Log.e(TAG, msg);
-        RequestEntity entity;
-        DeviceEntity data;
-        try {
-            entity = gson.fromJson(msg, RequestEntity.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-        switch (entity.getMode()) {
-            case Config.INPUT_MESSAGE:
-                listener.onInputMsg();
-                break;
-            case Config.TAKE_PHOTO:
-                data =  gson.fromJson(entity.getEntity(), DeviceEntity.class);
-                listener.onTakePhoto(entity, data);
-                break;
-            case Config.RETAKE_PHOTO:
-                data =  gson.fromJson(entity.getEntity(), DeviceEntity.class);
-                listener.onRetakePhoto(entity, data);
-                break;
-            case Config.HEARTBEAT://心跳发送
-                break;
-            case Config.HEARTBEAT_REPLY://心跳回复  服务器
-                break;
-        }
-    };
-
-
-    public interface ServerListener {
-        /**
-         * 信息输入
-         */
-        void onInputMsg();
-
-        /**
-         * 拍照
-         */
-        void onTakePhoto(RequestEntity entity, DeviceEntity data);
-
-        /**
-         * 重新拍照
-         */
-        void onRetakePhoto(RequestEntity entity, DeviceEntity data);
-    }
+    private int number = 0;
 
     private class SendThread extends Thread {
 
@@ -119,21 +71,83 @@ public class WebSocketMode {
         }
     }
 
+    public interface DeviceListener {
+
+        void onSuccess();
+
+        void onError(String msg);
+
+    }
+
+
+    private WebSocket.StringCallback stringCallback = msg -> {
+        Log.e(TAG, msg);
+        RequestEntity entity;
+        try {
+            entity = gson.fromJson(msg, RequestEntity.class);
+        } catch (Exception e) {
+            return;
+        }
+        if (entity.getNumber() == -1) return;
+        DeviceListener listener = messagesListener.remove(entity.getNumber());
+        if (listener == null) return;
+        switch (entity.getMode()) {
+            case Config.START_LASER:
+                if (entity.getErrorCode() != Config.SUCCESS) {
+                    listener.onError(entity.getErrorMessage());
+                } else {
+                    listener.onSuccess();
+                }
+                break;
+        }
+    };
+
     @SuppressLint("CheckResult")
-    private WebSocketMode() {
+    private DeviceSocketMode() {
         openSocket();
         sendThread = new SendThread();
         sendThread.start();
-        heartbeatDis = Observable.interval(10, TimeUnit.SECONDS)
+        dis = Observable.interval(5, TimeUnit.SECONDS)
                 .subscribeOn(Schedulers.newThread())
-                .subscribe(l -> {
-                    RequestEntity entity = new RequestEntity();
-                    entity.setMode(Config.HEARTBEAT);
-                    sendMessage(entity);
-                });
+                .subscribe(l -> sendMessage(Config.HEARTBEAT, null));
     }
 
-    public void sendMessage(RequestEntity message) {
+    /**
+     * 启动激光
+     */
+    public void startLaser(DeviceListener listener) {
+        sendMessage(Config.START_LASER, listener);
+    }
+
+    /**
+     * 启动人脸收集
+     */
+    public void startFindFace(RequestEntity entity, DeviceListener listener) {
+        entity.setMode(Config.START_FIND_FACE);
+        putListener(listener, entity);
+        sendMessage(entity);
+    }
+
+    private void sendMessage(int mode, DeviceListener listener) {
+        RequestEntity entity = new RequestEntity();
+        entity.setMode(mode);
+        putListener(listener, entity);
+        sendMessage(entity);
+    }
+
+    private void putListener(DeviceListener listener, RequestEntity entity) {
+        if (listener != null) {
+            number += 1;
+            if (number < 0) {
+                number = 1;
+            }
+            entity.setNumber(number);
+            messagesListener.put(number + 1, listener);
+        }
+    }
+
+
+    private void sendMessage(RequestEntity message) {
         String str = gson.toJson(message);
         messageList.add(str);
         synchronized (waitObject) {
@@ -144,15 +158,16 @@ public class WebSocketMode {
     public void close() {
         if (sendThread != null) sendThread.interrupt();
         if (webSocket != null) webSocket.close();
-        if(heartbeatDis!=null) heartbeatDis.dispose();
+        if (dis != null) dis.dispose();
+        dis = null;
         sendThread = null;
         webSocket = null;
-        webSocketMode = null;
+        deviceWebSocket = null;
     }
 
     private void openSocket() {
-        AsyncHttpClient.getDefaultInstance().websocket(Config.WEBSOCKET_URL + Config.DEVICE_ID,
-                null, (ex, webSocket) -> {
+        AsyncHttpClient.getDefaultInstance().websocket(Config.WEBSOCKET_DEVICE_URL,
+                Config.PROTOCOL, (ex, webSocket) -> {
                     if (ex != null) {
                         ex.printStackTrace();
                         return;
@@ -166,12 +181,12 @@ public class WebSocketMode {
                 });
     }
 
-    public static WebSocketMode getInstance() {
-        synchronized (WebSocketMode.class) {
-            if (webSocketMode == null) {
-                webSocketMode = new WebSocketMode();
+    public static DeviceSocketMode getInstance() {
+        synchronized (DeviceSocketMode.class) {
+            if (deviceWebSocket == null) {
+                deviceWebSocket = new DeviceSocketMode();
             }
         }
-        return webSocketMode;
+        return deviceWebSocket;
     }
 }

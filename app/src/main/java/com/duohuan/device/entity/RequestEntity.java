@@ -27,35 +27,34 @@ import com.duohuan.device.util.Config;
  * 日期: 2019/5/14
  * 时间: 17:35
  */
-public class RequestEntity {//服务器推送启动拍照，客户端会返回消息，如果返回启动拍照失败需要进行重新发送
+public class RequestEntity {
+
     private String userId;
-    /**
-     * -1 心跳
-     * 0 启动扫描器
-     * 1 注册完成等待输入详细信息
-     * 2 拍照环节
-     * 3 重新拍照
-     */
     private int mode;
-
     private String deviceId = Config.DEVICE_ID;
-    /**
-     * 0 请求成功
-     * 其他均为异常
-     */
     private int errorCode;
-
-    /**
-     * 异常原因
-     */
     private String errorMessage;
-
-
-    /**
-     * 业务实体类Json
-     */
     private String entity;
+    private String messageId;
+    private int number = -1;
 
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
+    }
+
+
+    public int getNumber() {
+        return number;
+    }
+
+    public void setNumber(int number) {
+        this.number = number;
+    }
 
     public String getDeviceId() {
         return deviceId;

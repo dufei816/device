@@ -1,6 +1,7 @@
 package com.duohuan.device.activity;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.MediaScannerConnection;
@@ -19,6 +20,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
+import io.reactivex.Observable;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.schedulers.Schedulers;
 
 /**
  * 　　　　　　　┏┛┻━━━┛┻┓ + +
@@ -58,6 +68,25 @@ public class BaseActivity extends RxAppCompatActivity {
     }
 
 
+    @SuppressLint({"SimpleDateFormat", "CheckResult"})
+    private void setTime() {
+        Observable.just("http://www.baidu.com")
+                .subscribeOn(Schedulers.io())
+                .flatMap(url -> Observable.just(new URL(url)))
+                .flatMap(url -> {
+                    URLConnection uc = url.openConnection();//生成连接对象
+                    uc.connect(); //发出连接
+                    long ld = uc.getDate(); //取得网站日期时间
+                    DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(ld);
+                    final String format = formatter.format(calendar.getTime());
+                    return Observable.just(format);
+                })
+                .subscribe(time -> Log.e(TAG, "Time = " + time));
+    }
+
+
     protected synchronized void saveBitmap(Bitmap bitmap) {
         File outputFile = ImageUtils.getCaptureFile(Environment.DIRECTORY_DCIM, ".png");
         Log.i(TAG, "File=" + outputFile.getName());
@@ -73,7 +102,7 @@ public class BaseActivity extends RxAppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        MediaScannerConnection.scanFile(this.getApplicationContext(), new String[]{outputFile.getPath()},null, null);
+        MediaScannerConnection.scanFile(this.getApplicationContext(), new String[]{outputFile.getPath()}, null, null);
     }
 
 

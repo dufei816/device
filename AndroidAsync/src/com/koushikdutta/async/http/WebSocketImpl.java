@@ -155,7 +155,8 @@ public class WebSocketImpl implements WebSocket {
         headers.set("Connection", "Upgrade");
         headers.set("Upgrade", "websocket");
         if (protocol != null)
-            headers.set("Sec-WebSocket-Protocol", protocol);
+            headers.set("Protocol", protocol);
+//            headers.set("Sec-WebSocket-Protocol", protocol);
         headers.set("Pragma", "no-cache");
         headers.set("Cache-Control", "no-cache");
         if (TextUtils.isEmpty(req.getHeaders().get("User-Agent")))

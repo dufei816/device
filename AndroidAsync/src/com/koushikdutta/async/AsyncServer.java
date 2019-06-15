@@ -122,15 +122,12 @@ public class AsyncServer {
 
     private static ExecutorService synchronousWorkers = newSynchronousWorkers("AsyncServer-worker-");
     private static void wakeup(final SelectorWrapper selector) {
-        synchronousWorkers.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    selector.wakeupOnce();
-                }
-                catch (Exception e) {
-                    Log.i(LOGTAG, "Selector Exception? L Preview?");
-                }
+        synchronousWorkers.execute(() -> {
+            try {
+                selector.wakeupOnce();
+            }
+            catch (Exception e) {
+                Log.i(LOGTAG, "Selector Exception? L Preview?");
             }
         });
     }

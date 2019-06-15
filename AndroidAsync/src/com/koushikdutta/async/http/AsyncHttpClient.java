@@ -654,29 +654,26 @@ public class AsyncHttpClient {
     public Future<WebSocket> websocket(final AsyncHttpRequest req, String protocol, final WebSocketConnectCallback callback) {
         WebSocketImpl.addWebSocketUpgradeHeaders(req, protocol);
         final SimpleFuture<WebSocket> ret = new SimpleFuture<WebSocket>();
-        Cancellable connect = execute(req, new HttpConnectCallback() {
-            @Override
-            public void onConnectCompleted(Exception ex, AsyncHttpResponse response) {
-                if (ex != null) {
-                    if (ret.setComplete(ex)) {
-                        if (callback != null)
-                            callback.onCompleted(ex, null);
-                    }
-                    return;
+        Cancellable connect = execute(req, (ex, response) -> {
+            if (ex != null) {
+                if (ret.setComplete(ex)) {
+                    if (callback != null)
+                        callback.onCompleted(ex, null);
                 }
-                WebSocket ws = WebSocketImpl.finishHandshake(req.getHeaders(), response);
-                if (ws == null) {
-                    ex = new WebSocketHandshakeException("Unable to complete websocket handshake");
-                    if (!ret.setComplete(ex))
-                        return;
-                }
-                else {
-                    if (!ret.setComplete(ws))
-                        return;
-                }
-                if (callback != null)
-                    callback.onCompleted(ex, ws);
+                return;
             }
+            WebSocket ws = WebSocketImpl.finishHandshake(req.getHeaders(), response);
+            if (ws == null) {
+                ex = new WebSocketHandshakeException("Unable to complete websocket handshake");
+                if (!ret.setComplete(ex))
+                    return;
+            }
+            else {
+                if (!ret.setComplete(ws))
+                    return;
+            }
+            if (callback != null)
+                callback.onCompleted(ex, ws);
         });
 
         ret.setParent(connect);

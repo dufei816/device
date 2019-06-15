@@ -299,7 +299,7 @@ public class CameraInterface implements Camera.PreviewCallback {
         if (mCamera == null) {
             openCamera(SELECTED_CAMERA);
         }
-        callback.cameraHasOpened();
+        if (callback != null) callback.cameraHasOpened();
     }
 
     private void setFlashModel() {
@@ -454,6 +454,7 @@ public class CameraInterface implements Camera.PreviewCallback {
 
     public void takePicture(final TakePictureCallback callback) {
         if (mCamera == null) {
+            callback.captureResult(null, false);
             return;
         }
         switch (cameraAngle) {
@@ -465,7 +466,7 @@ public class CameraInterface implements Camera.PreviewCallback {
                 break;
         }
 //
-        Log.i("CJT", angle + " = " + cameraAngle + " = " + nowAngle);
+        Log.i("CJT", angle + " = " + cameraAngle + " = " + nowAngle);//camera_front_position
         mCamera.takePicture(null, null, new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {

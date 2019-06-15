@@ -1,5 +1,8 @@
 package com.koushikdutta.async;
 
+import android.annotation.SuppressLint;
+import android.util.Log;
+
 import com.koushikdutta.async.callback.CompletedCallback;
 import com.koushikdutta.async.callback.DataCallback;
 import com.koushikdutta.async.callback.WritableCallback;
@@ -15,7 +18,9 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 public class Util {
+    private static final String TAG = "AsyncUtil";
     public static boolean SUPRESS_DEBUG_EXCEPTIONS = false;
+    @SuppressLint("Assert")
     public static void emitAllData(DataEmitter emitter, ByteBufferList list) {
         int remaining;
         DataCallback handler = null;
@@ -30,14 +35,13 @@ public class Util {
 
                 // call byteBufferList.recycle() or read all the data to prevent this assertion.
                 // this is nice to have, as it identifies protocol or parsing errors.
-
-//                System.out.println("Data: " + list.peekString());
                 System.out.println("handler: " + handler);
                 list.recycle();
                 if (SUPRESS_DEBUG_EXCEPTIONS)
                     return;
                 assert false;
-                throw new RuntimeException("mDataHandler failed to consume data, yet remains the mDataHandler.");
+                Log.e(TAG, "mDataHandler failed to consume data, yet remains the mDataHandler.");
+//                throw new RuntimeException("mDataHandler failed to consume data, yet remains the mDataHandler.");
             }
         }
         if (list.remaining() != 0 && !emitter.isPaused()) {
@@ -51,7 +55,8 @@ public class Util {
             if (SUPRESS_DEBUG_EXCEPTIONS)
                 return;
             assert false;
-            throw new RuntimeException("Not all data was consumed by Util.emitAllData");
+            Log.e(TAG, "Not all data was consumed by Util.emitAllData");
+//            throw new RuntimeException("Not all data was consumed by Util.emitAllData");
         }
     }
 
